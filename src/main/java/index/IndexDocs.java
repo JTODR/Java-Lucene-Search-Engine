@@ -1,5 +1,6 @@
 package index;
 
+import document.CranfieldDoc;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,7 +15,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -47,81 +50,15 @@ public class IndexDocs {
 			System.exit(1);
 		}
 
-		parseCranfieldFile(docDir);
-
-	}
-
-	private static void parseCranfieldFile(Path path) {
-		try (InputStream stream = Files.newInputStream(path)) {
-			
-			BufferedReader in = new BufferedReader(new InputStreamReader(stream));
-			String line = null;
-			StringBuilder fileContent = new StringBuilder();
-
-			// read in the whole cranfield file
-			while((line = in.readLine()) != null) {
-				fileContent.append(line);
-			}
-			
-			// split the cranfield file using UniqueID as the delimiter
-			String[] parts = fileContent.toString().split(".I");			
-			
-			// start for loop at i=1 as first string is empty for some reason...
-			for(int i = 1; i < parts.length; i++) {
-				parseDoc(parts[i]);
-			}
-			
-		}
-		catch (IOException e1) {
-
-			e1.printStackTrace();
-		} 
-	}
-	
-	private static void parseDoc(String currDoc) {
 		
-		int docId;
-		String title, authors, biblography, words, temp;
+		Parser parser = new Parser();
 		
-		// parse out ID of current doc
-		docId = Integer.parseInt(currDoc.split(".T")[0].trim());
-		temp = currDoc.split(".T")[1];
-		
-		// parse out title of current doc
-		title = temp.split(".A")[0];
-		temp = temp.split(".A")[1];
-		
-		// parse out authors of current doc
-		authors = temp.split(".B")[0];
-		temp = temp.split(".B")[1];
-		
-		// check if all that is left is ".W", if so, biblography and words are both empty
-		if(temp.equals(".W")) {
-			biblography = "";
-			words = "";
-		}
-		else {
-			// parse out bib and words of current doc
-			biblography = temp.split(".W")[0];
-			words = temp.split(".W")[1];
-		}
-		
-		System.out.println("ID: " + docId);
-		System.out.println("TITLE: " + title);
-		System.out.println("AUTHORS: " + authors);
-		System.out.println("BIBLOGRAPHY: " + biblography);
-		System.out.println("WORDS: " + words + "\n\n");
-		
-		createNewCranfieldDoc(docId, title, authors, biblography, words);
-	}
-	
-	private static void createNewCranfieldDoc(int docId, 
-			String title, 
-			String authors,
-			String biblography, 
-			String words) {
-		
-		
+		/*
+		 * get a list of all docs as objects
+		 * each doc object has a uniqueID, title, authors, bibliography and words.
+		 */
+		List<CranfieldDoc> docObjList = parser.parse(docDir);
 		
 	}
+
 }

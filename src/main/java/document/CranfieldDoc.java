@@ -1,11 +1,15 @@
 package document;
 
+
 /*
-.I: The unique ID of the document. An integer from 1 to 1400.
-.T: The title of the document. A string which may span multiple lines.
-.A: The authors of a document. A string which may span multiple lines.
-.B: Bibliographic information about the document. A string which may span multiple lines.
-.W: Words. The actual text of the document. A string which may span multiple lines.
+ * POJO class to store the 5 attributes of each document
+ * 
+ * Each document has the following attributes: 
+ * .I: The unique ID of the document. An integer from 1 to 1400.
+ * .T: The title of the document. A string which may span multiple lines.
+ * .A: The authors of a document. A string which may span multiple lines.
+ * .B: Bibliographic information about the document. A string which may span multiple lines.
+ * .W: Words. The actual text of the document. A string which may span multiple lines.
  */
 
 public class CranfieldDoc {
@@ -13,7 +17,7 @@ public class CranfieldDoc {
 	private int id;
 	private String title;
 	private String authors;
-	private String biblography;
+	private String bibliography;
 	private String words;
 	
 	public int getId() {
@@ -34,11 +38,11 @@ public class CranfieldDoc {
 	public void setAuthors(String authors) {
 		this.authors = authors;
 	}
-	public String getBiblography() {
-		return biblography;
+	public String getBibliography() {
+		return bibliography;
 	}
-	public void setBiblography(String biblography) {
-		this.biblography = biblography;
+	public void setBibliography(String bibliography) {
+		this.bibliography = bibliography;
 	}
 	public String getWords() {
 		return words;
