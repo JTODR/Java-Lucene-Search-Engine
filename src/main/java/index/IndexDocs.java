@@ -1,28 +1,21 @@
 package index;
 
 import document.CranfieldDoc;
+import parse.IndexParser;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -30,8 +23,6 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.flexible.core.util.StringUtils;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -52,13 +43,13 @@ public class IndexDocs {
 		}
 
 		
-		Parser parser = new Parser();
+		IndexParser parser = new IndexParser();
 		
 		/*
 		 * get a list of all docs as objects
 		 * each doc object has a uniqueID, title, authors, bibliography and words.
 		 */
-		List<CranfieldDoc> docObjList = parser.parse(docDir);
+		List<CranfieldDoc> docObjList = parser.getDocuments(docDir);
 		
 		if(docObjList == null) {
 			System.out.println("Document object list is null, check the parser. Exiting...");
@@ -87,13 +78,6 @@ public class IndexDocs {
 		
 		iwc.setOpenMode(OpenMode.CREATE);
 
-		// Optional: for better indexing performance, if you
-		// are indexing many documents, increase the RAM
-		// buffer. But if you do this, increase the max heap
-		// size to the JVM (eg add -Xmx512m or -Xmx1g):
-		//
-		// iwc.setRAMBufferSizeMB(256.0);
-
 		IndexWriter writer = null;
 		try {
 			writer = new IndexWriter(dir, iwc);
@@ -102,14 +86,6 @@ public class IndexDocs {
 			e.printStackTrace();
 		}
 		indexDocs(writer, docObjList);
-
-		// NOTE: if you want to maximize search performance,
-		// you can optionally call forceMerge here. This can be
-		// a terribly costly operation, so generally it's only
-		// worth it when your index is relatively static (ie
-		// you're done adding documents to it):
-		//
-		// writer.forceMerge(1);
 
 		try {
 			writer.close();
@@ -130,7 +106,7 @@ public class IndexDocs {
 	
 	/** Indexes a single document */
 	static void indexDoc(IndexWriter writer, CranfieldDoc docObj) {
-		System.out.println("Indexing document: " + docObj.getId());
+		//System.out.println("Indexing document: " + docObj.getId());
 		// make a new, empty document
 		Document doc = new Document();		
 		
@@ -156,7 +132,7 @@ public class IndexDocs {
 
 		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
 			// New index, so we just add the document (no old document can be there):
-			System.out.println("adding " + docObj.getTitle());
+			//System.out.println("adding " + docObj.getTitle());
 			try {
 				writer.addDocument(doc);
 			} catch (IOException e) {
