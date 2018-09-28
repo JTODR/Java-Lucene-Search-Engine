@@ -18,10 +18,18 @@ public class Parser {
 	}
 	
 	public List<CranfieldDoc> parse(Path docDir) {
-		System.out.println("Starting to parse document...");
-		StringBuilder fileContent = readCranfieldFile(docDir);
+		StringBuilder fileContent = null;
 		
+		try {
+			fileContent = readCranfieldFile(docDir);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
+		if(fileContent == null) {
+			System.out.println("File content is null, returning...");
+			return null;
+		}
 		// split the cranfield file using UniqueID as the delimiter
 		String[] parts = fileContent.toString().split(".I");
 
@@ -38,26 +46,20 @@ public class Parser {
 		return docList;
 	}
 	
-	private static StringBuilder readCranfieldFile(Path path) {		
-		try (InputStream stream = Files.newInputStream(path)) {
+	private static StringBuilder readCranfieldFile(Path path) throws IOException {		
+		InputStream stream = Files.newInputStream(path);
 			
-			BufferedReader in = new BufferedReader(new InputStreamReader(stream));
-			String line = null;
-			StringBuilder fileContent = new StringBuilder();
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		String line = null;
+		StringBuilder fileContent = new StringBuilder();
 
-			// read in the whole cranfield file
-			while((line = in.readLine()) != null) {
-				fileContent.append(line);
-			}
-			System.out.println("Document read successfully...");
-			return fileContent;
+		// read in the whole cranfield file
+		while((line = in.readLine()) != null) {
+			fileContent.append(line);
 		}
-		catch (IOException e1) {
-			e1.printStackTrace();
-		} 
-		return null;
+		System.out.println("Document read successfully...");
+		return fileContent;
 	}
-	
 	
 	private static CranfieldDoc parseEachDoc(String currDoc) {
 		

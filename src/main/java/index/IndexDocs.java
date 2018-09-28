@@ -2,6 +2,7 @@ package index;
 
 import document.CranfieldDoc;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -59,6 +60,110 @@ public class IndexDocs {
 		 */
 		List<CranfieldDoc> docObjList = parser.parse(docDir);
 		
+		if(docObjList == null) {
+			System.out.println("Document object list is null, check the parser. Exiting...");
+			System.exit(2);
+		}
+		
+		
+		Directory dir = null;
+		try {
+			dir = FSDirectory.open(Paths.get("index"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Analyzer analyzer = new StandardAnalyzer();
+		IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+
+		/*if (create) {
+			// Create a new index in the directory, removing any
+			// previously indexed documents:
+			iwc.setOpenMode(OpenMode.CREATE);
+		} else {
+			// Add new documents to an existing index:
+			iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
+		}*/
+		
+		iwc.setOpenMode(OpenMode.CREATE);
+
+		// Optional: for better indexing performance, if you
+		// are indexing many documents, increase the RAM
+		// buffer. But if you do this, increase the max heap
+		// size to the JVM (eg add -Xmx512m or -Xmx1g):
+		//
+		// iwc.setRAMBufferSizeMB(256.0);
+
+		IndexWriter writer = null;
+		try {
+			writer = new IndexWriter(dir, iwc);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		indexDocs(writer, docObjList);
+
+		// NOTE: if you want to maximize search performance,
+		// you can optionally call forceMerge here. This can be
+		// a terribly costly operation, so generally it's only
+		// worth it when your index is relatively static (ie
+		// you're done adding documents to it):
+		//
+		// writer.forceMerge(1);
+
+		try {
+			writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	static void indexDocs(final IndexWriter writer, List<CranfieldDoc> docObjList){
+	   
+		for(int i = 0; i < docObjList.size(); i++) {
+			indexDoc(writer, docObjList.get(i));
+		}
+	   
+	}
+	
+	/** Indexes a single document */
+	static void indexDoc(IndexWriter writer, CranfieldDoc docObj) {
+		System.out.println("Indexing document: " + docObj.getId());
+		// make a new, empty document
+		Document doc = new Document();		
+		
+		/*
+		 * Field.Store.YES vs Field.Store.NO:
+		 * When the index files are queried, stored values will be presented back to the query
+		 * Non stored values will not be presented
+		 */
+		
+		doc.add(new StringField("id", String.valueOf(docObj.getId()), Field.Store.YES));
+		
+		InputStream tempInputStream = new ByteArrayInputStream( docObj.getTitle().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("title", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		
+		tempInputStream = new ByteArrayInputStream( docObj.getAuthors().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("authors", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		
+		tempInputStream = new ByteArrayInputStream( docObj.getBibliography().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("bibliography", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		
+		tempInputStream = new ByteArrayInputStream( docObj.getWords().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("words", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+
+		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
+			// New index, so we just add the document (no old document can be there):
+			System.out.println("adding " + docObj.getTitle());
+			try {
+				writer.addDocument(doc);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 }
