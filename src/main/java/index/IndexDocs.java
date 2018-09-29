@@ -1,7 +1,7 @@
 package index;
 
 import document.CranfieldDoc;
-import parse.IndexParser;
+import parse.CranfieldDocParser;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -43,7 +43,7 @@ public class IndexDocs {
 		}
 
 		
-		IndexParser parser = new IndexParser();
+		CranfieldDocParser parser = new CranfieldDocParser();
 		
 		/*
 		 * get a list of all docs as objects

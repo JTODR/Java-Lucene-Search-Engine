@@ -6,9 +6,9 @@ import java.util.List;
 
 import document.CranfieldQuery;
 
-public class QueryParser extends Parser {
+public class CranfieldQueryParser extends Parser {
 	
-	public QueryParser() {
+	public CranfieldQueryParser() {
 		System.out.println("Query parser created...");
 	}
 	
@@ -38,19 +38,11 @@ public class QueryParser extends Parser {
 		
 		queryContents = parse(query, delimiters);
 		
-		id = Integer.parseInt(queryContents.get(0).split(".I ")[1].trim());
-		text = queryContents.get(1);
-		
-		
-		// parse out text of current query
-		/*text = query.split(".W")[1];
-		String temp = query.split(".W")[0];
-		
-		// parse out id of current query
-		id = Integer.parseInt(temp.split(".I ")[1].trim());*/
+		id = Integer.parseInt(queryContents.get(0).trim().replaceAll(" +", " "));
+		text = queryContents.get(1).trim().replaceAll(" +", " ");
 		
 		System.out.println("ID: " + id);
-		System.out.println("TEXT: " + text);
+		System.out.println("TEXT: " + text + "\n\n");
 		
 		return createQueryObj(id, text);
 	}

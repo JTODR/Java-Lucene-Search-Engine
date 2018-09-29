@@ -6,9 +6,9 @@ import java.util.List;
 
 import document.CranfieldDoc;
 
-public class IndexParser extends Parser {
+public class CranfieldDocParser extends Parser {
 	
-	public IndexParser() {
+	public CranfieldDocParser() {
 		System.out.println("Index parser created...");
 	}
 	
@@ -39,11 +39,11 @@ public class IndexParser extends Parser {
 		
 		docContents = parse(currDoc, delimiters);
 		
-		docId = Integer.parseInt(docContents.get(0).trim());
-		title = docContents.get(1);
-		authors = docContents.get(2);
-		bibliography = docContents.get(3);
-		words = docContents.get(4);
+		docId = Integer.parseInt(docContents.get(0).trim().replaceAll(" +", " "));
+		title = docContents.get(1).trim().replaceAll(" +", " ");
+		authors = docContents.get(2).trim().replaceAll(" +", " ");
+		bibliography = docContents.get(3).trim().replaceAll(" +", " ");
+		words = docContents.get(4).trim().replaceAll(" +", " ");
 		
 		System.out.println("ID: " + docId);
 		System.out.println("TITLE: " + title);

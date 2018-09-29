@@ -1,11 +1,15 @@
 package query;
 
+import parse.CranfieldQueryParser;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -16,9 +20,25 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.FSDirectory;
 
-public class queryDocs {
+import document.CranfieldQuery;
+
+public class QueryDocs {
 	/** Simple command-line based search demo. */
 	public static void main(String[] args) throws Exception {
+		
+		String queryPath = "data/cran.qry";
+
+		final Path queryDir = Paths.get(queryPath);
+		if (!Files.isReadable(queryDir)) {
+			System.out.println("Document directory '" + queryDir.toAbsolutePath()
+					+ "' does not exist or is not readable, please check the path");
+			System.exit(2);
+		}
+		
+		CranfieldQueryParser parser = new CranfieldQueryParser();
+		
+		List<CranfieldQuery> queries = parser.getQueries(queryDir);
+		
 		/*String usage = "Usage:\tjava org.apache.lucene.demo.SearchFiles [-index dir] [-field f] [-repeat n] [-queries file] [-query string] [-raw] [-paging hitsPerPage]\n\nSee http://lucene.apache.org/core/4_1_0/demo/ for details.";
 		if (args.length > 0 && ("-h".equals(args[0]) || "-help".equals(args[0]))) {
 			System.out.println(usage);

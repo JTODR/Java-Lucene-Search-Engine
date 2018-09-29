@@ -26,12 +26,15 @@ public class Parser {
 
 		// read in file
 		try {
-			while((line = in.readLine()) != null) 
-				fileContent.append(line);
+			while((line = in.readLine()) != null) {
+				fileContent.append(line + " ");
+				//fileContent.append("\n");
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
+		//System.out.println(fileContent.toString().substring(0,5000));
 		System.out.println("Document read successfully...");
 		
 		// split the file using UniqueID as the delimiter
@@ -44,7 +47,8 @@ public class Parser {
 		List<String> resultList = new ArrayList<>();
 	
 		for(int i = 0; i < delimiters.length; i++) {
-			// check if the words attribute for this document is empty
+			
+			// if the remaining text is the .W delimiter then the bibliography and words are empty
 			if(text.equals(".W")) {	
 				resultList.add("");
 				resultList.add("");
