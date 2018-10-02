@@ -39,10 +39,10 @@ public class CranfieldQueryParser extends Parser {
 		queryContents = parse(query, delimiters);
 		
 		id = Integer.parseInt(queryContents.get(0).trim().replaceAll(" +", " "));
-		text = queryContents.get(1).trim().replaceAll(" +", " ");
+		text = queryContents.get(1).trim().replaceAll(" +", " ").replaceAll("\\?", "");
 		
-		System.out.println("ID: " + id);
-		System.out.println("TEXT: " + text + "\n\n");
+		//System.out.println("ID: " + id);
+		//System.out.println("TEXT: " + text + "\n\n");
 		
 		return createQueryObj(id, text);
 	}

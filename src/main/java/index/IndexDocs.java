@@ -118,17 +118,18 @@ public class IndexDocs {
 		
 		doc.add(new StringField("id", String.valueOf(docObj.getId()), Field.Store.YES));
 		
-		InputStream tempInputStream = new ByteArrayInputStream( docObj.getTitle().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("title", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		InputStream inputStream = new ByteArrayInputStream( docObj.getTitle().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new StringField("title", docObj.getTitle(), Field.Store.YES));
+		//doc.add(new TextField("title", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)), Field.Store.YES));
 		
-		tempInputStream = new ByteArrayInputStream( docObj.getAuthors().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("authors", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		inputStream = new ByteArrayInputStream( docObj.getAuthors().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("authors", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))));
 		
-		tempInputStream = new ByteArrayInputStream( docObj.getBibliography().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("bibliography", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		inputStream = new ByteArrayInputStream( docObj.getBibliography().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("bibliography", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))));
 		
-		tempInputStream = new ByteArrayInputStream( docObj.getWords().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("words", new BufferedReader(new InputStreamReader(tempInputStream, StandardCharsets.UTF_8))));
+		inputStream = new ByteArrayInputStream( docObj.getWords().getBytes( StandardCharsets.UTF_8 ) );
+		doc.add(new TextField("words", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))));
 
 		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
 			// New index, so we just add the document (no old document can be there):
