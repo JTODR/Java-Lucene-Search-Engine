@@ -24,6 +24,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 
 import document.CranfieldQuery;
+import document.CranfieldQueryResult;
 
 public class QueryDocs {
 	public static void main(String[] args) throws Exception {
@@ -51,7 +52,6 @@ public class QueryDocs {
 		QueryParser parser = new QueryParser(field, analyzer);
 		
 		List<String> outputData = new ArrayList<>();
-		List<String> returnList = new ArrayList<>();
 		
 		for(int i = 0; i < queries.size(); i++){
 
@@ -82,22 +82,27 @@ public class QueryDocs {
 	
 	public static List<String> performQuerySearch(BufferedReader in, IndexSearcher searcher, Query query, int queryId) throws IOException {
 		List<String> returnList = new ArrayList<>();  
-	    TopDocs results = searcher.search(query, 20);
+	    TopDocs results = searcher.search(query, 30);
 	    ScoreDoc[] hits = results.scoreDocs;
 	    Document doc = null;
-	    String title;
-	    int docId;
+	    float maxScore = 1;
+	    float simScore = 0;
 	    
 	    for(int i = 0; i < hits.length; i++) {
+	    	if(i == 0) {
+	    		maxScore = hits[i].score;
+	    	}
 	    	doc = searcher.doc(hits[i].doc);
-	        title = doc.get("title");
-	        
-	        docId = Integer.valueOf(doc.get("id"));
-	        //System.out.println("FOUND [ID: " + id + "] [TITLE: " + title + "] [SCORE: " + hits[i].score + "]");
+	    	/*simScore = (hits[i].score/maxScore)*5;
+	    	if(simScore > 2) {
+		        returnList.add(queryId + " Q0 " + Integer.valueOf(doc.get("id")) + " " +  (i + 1) + " "+ simScore + " STANDARD");
+
+	    	}*/
+	        returnList.add(queryId + " Q0 " + Integer.valueOf(doc.get("id")) + " " +  (i + 1) + " "+ hits[i].score + " STANDARD");
+
+	       
 	        //System.out.println("FOUND [ID: " + docId + "] [SCORE: " + hits[i].score + "]");
-	        returnList.add(queryId + " 0 " + docId + " " + hits[i].score);
-	    }
-	    
+	    } 
 	    return returnList;
 	  }
 }
