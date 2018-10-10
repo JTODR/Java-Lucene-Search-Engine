@@ -26,6 +26,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -35,7 +36,7 @@ public class IndexDocs {
 	private IndexDocs() {
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
 		String docsPath = "data/cran.all.1400";
 
@@ -49,10 +50,7 @@ public class IndexDocs {
 		
 		CranfieldDocParser parser = new CranfieldDocParser();
 		
-		/*
-		 * get a list of all docs as objects
-		 * each doc object has a uniqueID, title, authors, bibliography and words.
-		 */
+		// get a list of all docs as objects, each doc object has a uniqueID, title, authors, bibliography and words.
 		List<CranfieldDoc> docObjList = parser.getDocuments(docDir);
 		
 		if(docObjList == null) {
@@ -71,35 +69,21 @@ public class IndexDocs {
 		
 		iwc.setOpenMode(OpenMode.CREATE);
 
-		IndexWriter writer = null;
-		try {
-			writer = new IndexWriter(dir, iwc);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+		IndexWriter writer = new IndexWriter(dir, iwc);
+
 		System.out.println("Starting to indexing documents...");
 
-		for(int i = 0; i < docObjList.size(); i++) {
+		for(int i = 0; i < 1/*docObjList.size()*/; i++) {
 			indexDoc(writer, docObjList.get(i));
 		}
 		System.out.println("Finish indexing documents...");
 		
-		
-		try {
-			writer.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+		writer.close();
 	}
 	
 	/** Indexes a single document **/
-	static void indexDoc(IndexWriter writer, CranfieldDoc docObj) {
-		//System.out.println("Indexing document: " + docObj.getId());
-		// make a new, empty document
+	static void indexDoc(IndexWriter writer, CranfieldDoc docObj) throws IOException {
+
 		Document doc = new Document();	
 		String stemmedText = "";
 		
@@ -107,49 +91,33 @@ public class IndexDocs {
 		 * Field.Store.YES vs Field.Store.NO:
 		 * When the index files are queried, stored values will be presented back to the query
 		 * Non stored values will not be presented
-		 */
+		 */		
 		
+		/* Cranfield Doc ID*/
 		doc.add(new StringField("id", String.valueOf(docObj.getId()), Field.Store.YES));
 		
-		
 		/* Cranfield Doc Title*/
-		try {
-			stemmedText = stemWords("title", docObj.getTitle());
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		stemmedText = stemWords("title", docObj.getTitle());
+		/*String[] splitWords = stemmedText.split("");
+		for(int i = 0; i < splitWords.length; i++) {
+			String termText = splitWords[i];
+			Term termInstance = new Term("words", splitWords[i]);                              
+			long termFreq = reader.totalTermFreq(termInstance);
+		}*/
 		doc.add(new TextField("title", stemmedText, Field.Store.YES));
-		System.out.println("ORIG TEXT: " + docObj.getTitle());
+		System.out.println("\n\nORIG TEXT: " + docObj.getTitle());
 		System.out.println("STEMMED TEXT: " + stemmedText);
 		
 		
-		/* Cranfield Doc Bibliography*/
-		/*try {
-			stemmedText = stemWords("bibliography", docObj.getBibliography());
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-		doc.add(new TextField("bibliography", stemmedText, Field.Store.YES));
-		System.out.println("ORIG TEXT: " + docObj.getBibliography());
-		System.out.println("STEMMED TEXT: " + stemmedText);*/
-		
 		/* Cranfield Doc Text*/
-		try {
-			stemmedText = stemWords("title", docObj.getWords());
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		stemmedText = stemWords("title", docObj.getWords());
 		doc.add(new TextField("words", stemmedText, Field.Store.YES));
-		//System.out.println("ORIG TEXT: " + docObj.getWords());
-		//System.out.println("STEMMED TEXT: " + stemmedText);
+		System.out.println("ORIG TEXT: " + docObj.getWords());
+		System.out.println("STEMMED TEXT: " + stemmedText);
 		
 		
 		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
-			try {
-				writer.addDocument(doc);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			writer.addDocument(doc);
 		}
 	}
 	

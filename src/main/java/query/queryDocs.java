@@ -25,6 +25,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.FSDirectory;
 
 import document.CranfieldQuery;
@@ -50,25 +51,30 @@ public class QueryDocs {
 		
 		IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
 		IndexSearcher searcher = new IndexSearcher(reader);
+		
+		
+		
+		searcher.setSimilarity(new BM25Similarity());
 		Analyzer analyzer = new StandardAnalyzer();
 		BufferedReader in = null;
 		QueryParser parser = new QueryParser(field, analyzer);
 		
 		List<String> outputData = new ArrayList<>();
 		
-		String line = "";
+		String queryText = "";
 		String stemmedLine = "";
+		int queryId = 0;
  		
 		for(int i = 0; i < queries.size(); i++){
 
-			line = queries.get(i).getText().trim();
-			Integer queryId = queries.get(i).getId();
+			queryText = queries.get(i).getText().trim();
+			queryId = queries.get(i).getId();
 
-			if (line == null || line.length() == -1) {
+			if (queryText == null || queryText.length() == -1) {
 				break;
 			}
 			
-			stemmedLine = stemWords("words", line);
+			stemmedLine = stemWords("words", queryText);
 
 			Query query = parser.parse(stemmedLine);
 			//System.out.println("\n\nOriginal query: ID: " + queries.get(i).getId() + ". \nText: " + line + ". \nStemmed Text: " + stemmedLine);
@@ -96,10 +102,9 @@ public class QueryDocs {
 	    for(int i = 0; i < hits.length; i++) {
 
 	    	doc = searcher.doc(hits[i].doc);
+	    	returnList.add(queryId + " Q0 " + doc.get("id") + " " +  (i + 1) + " "+ hits[i].score + " STANDARD");
 
-	        returnList.add(queryId + " Q0 " + Integer.valueOf(doc.get("id")) + " " +  (i + 1) + " "+ hits[i].score + " STANDARD");
-
-	        //System.out.println("FOUND [ID: " + docId + "] [SCORE: " + hits[i].score + "]");
+	        //System.out.println("FOUND [ID: " + Integer.valueOf(doc.get("id"))+ "] [SCORE: " + hits[i].score + "]");
 	    } 
 	    return returnList;
 	  }
@@ -113,7 +118,6 @@ public class QueryDocs {
 	    tokenizer = new PorterStemFilter(tokenizer);
 
 	    CharTermAttribute token = tokenizer.getAttribute(CharTermAttribute.class);
-	    
 
 	    StringBuilder stringBuilder = new StringBuilder();
 	    tokenizer.reset();
