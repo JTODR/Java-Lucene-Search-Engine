@@ -20,7 +20,7 @@ public class CranfieldQueryParser extends Parser {
 
 		System.out.println("Starting to parse each individual query...");
 		// parse each doc and return the object for each doc
-		for (int i = 1; i < fileParts.length; i++) { // start for loop at i=1 as first string is empty
+		for (int i = 0; i < fileParts.length; i++) { 
 			queryList.add(parseQuery(fileParts[i]));
 		}
 		

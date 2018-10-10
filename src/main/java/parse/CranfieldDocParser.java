@@ -20,13 +20,13 @@ public class CranfieldDocParser extends Parser {
 
 		System.out.println("Starting to parse each individual document...");
 		// parse each doc and return the object for each doc
-		for (int i = 1; i < fileParts.length; i++) { // start for loop at i=1 as first string is empty
+		for (int i = 0; i < fileParts.length; i++) { 
 			docList.add(parseDoc(fileParts[i]));
 		}
 		
 		System.out.println("Finished parsing each document...");
 		
-		return docList;
+		return null;
 	}
 
 	private static CranfieldDoc parseDoc(String currDoc) {
@@ -45,11 +45,11 @@ public class CranfieldDocParser extends Parser {
 		bibliography = docContents.get(3).trim().replaceAll(" +", " ");
 		words = docContents.get(4).trim().replaceAll(" +", " ");
 		
-		/*System.out.println("ID: " + docId);
+		System.out.println("ID: " + docId);
 		System.out.println("TITLE: " + title);
 		System.out.println("AUTHORS: " + authors);
 		System.out.println("BIBLIOGRAPHY: " + bibliography);
-		System.out.println("WORDS: " + words + "\n\n");*/
+		System.out.println("WORDS: " + words + "\n\n");
 		
 		return createDocObj(docId, title, authors, bibliography, words);
 	}

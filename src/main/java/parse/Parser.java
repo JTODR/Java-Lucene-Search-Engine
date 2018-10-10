@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Parser {
@@ -27,6 +28,7 @@ public class Parser {
 		// read in file
 		try {
 			while((line = in.readLine()) != null) {
+				System.out.println("LINE: " + line );
 				fileContent.append(line + " ");
 				//fileContent.append("\n");
 			}
@@ -38,9 +40,11 @@ public class Parser {
 		System.out.println("Document read successfully...");
 		
 		// split the file using UniqueID as the delimiter
+
 		String[] parts = fileContent.toString().split(".I");
+		String[] returnArray = Arrays.copyOfRange(parts, 1, parts.length);		// remove 1st item from array
 		
-		return parts;
+		return returnArray;
 	}
 	
 	public static List<String> parse(String text, String[] delimiters){
