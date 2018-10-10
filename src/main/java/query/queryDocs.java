@@ -14,27 +14,39 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 
 import document.CranfieldQuery;
 
 public class QueryDocs {
+	
+	private static String queryPath = "data/cran.qry";
+	private static String indexPath = "index";
+	
 	public static void main(String[] args) throws Exception {
 		
-		String queryPath = "data/cran.qry";
-		String indexPath = "index";
+
 
 		final Path queryDir = Paths.get(queryPath);
 		if (!Files.isReadable(queryDir)) {
@@ -47,22 +59,17 @@ public class QueryDocs {
 		
 		List<CranfieldQuery> queries = cranfieldParser.getQueries(queryDir);
 				
-		String field = "words";
+		String field = "contents";
 		
 		IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
 		IndexSearcher searcher = new IndexSearcher(reader);
-		
-		
-		
 		searcher.setSimilarity(new BM25Similarity());
-		Analyzer analyzer = new StandardAnalyzer();
-		BufferedReader in = null;
+		Analyzer analyzer = new EnglishAnalyzer();
 		QueryParser parser = new QueryParser(field, analyzer);
 		
 		List<String> outputData = new ArrayList<>();
 		
 		String queryText = "";
-		String stemmedLine = "";
 		int queryId = 0;
  		
 		for(int i = 0; i < queries.size(); i++){
@@ -74,14 +81,12 @@ public class QueryDocs {
 				break;
 			}
 			
-			stemmedLine = stemWords("words", queryText);
-
-			Query query = parser.parse(stemmedLine);
+			Query query = parser.parse(queryText);
 			//System.out.println("\n\nOriginal query: ID: " + queries.get(i).getId() + ". \nText: " + line + ". \nStemmed Text: " + stemmedLine);
 			System.out.println("Parsed query: " + query.toString(field));
 			//System.out.println("QUERY: " + query);
 			
-			outputData.addAll(performQuerySearch(in, searcher, query, queryId));
+			outputData.addAll(performQuerySearch(searcher, query, queryId));
 		}
 		
 		for(int i = 0; i < outputData.size(); i++) {
@@ -93,7 +98,7 @@ public class QueryDocs {
 		reader.close();
 	}
 	
-	public static List<String> performQuerySearch(BufferedReader in, IndexSearcher searcher, Query query, int queryId) throws IOException {
+	public static List<String> performQuerySearch(IndexSearcher searcher, Query query, int queryId) throws IOException {
 		List<String> returnList = new ArrayList<>();  
 	    TopDocs results = searcher.search(query, 30);
 	    ScoreDoc[] hits = results.scoreDocs;
@@ -107,33 +112,7 @@ public class QueryDocs {
 	        //System.out.println("FOUND [ID: " + Integer.valueOf(doc.get("id"))+ "] [SCORE: " + hits[i].score + "]");
 	    } 
 	    return returnList;
-	  }
+	  }	
 	
-	private static String stemWords(String fieldName, String text) throws IOException{
-	    
-	    Analyzer analyzer = new StandardAnalyzer();
-	    TokenStream tokenizer = analyzer.tokenStream(fieldName, text);
-	 
-	    tokenizer = new LowerCaseFilter(tokenizer);
-	    tokenizer = new PorterStemFilter(tokenizer);
-
-	    CharTermAttribute token = tokenizer.getAttribute(CharTermAttribute.class);
-
-	    StringBuilder stringBuilder = new StringBuilder();
-	    tokenizer.reset();
-
-	    while(tokenizer.incrementToken()) {
-	        if(stringBuilder.length() > 0 ) {
-	            stringBuilder.append(" ");
-	        }
-
-	        stringBuilder.append(token.toString());
-	    }
-
-	    tokenizer.end();
-	    tokenizer.close();
-	    analyzer.close();
-
-	    return stringBuilder.toString();
-	}
+	
 }
