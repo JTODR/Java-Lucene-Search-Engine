@@ -15,7 +15,11 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -56,25 +60,14 @@ public class IndexDocs {
 			System.exit(2);
 		}
 		
-		
 		Directory dir = null;
 		try {
 			dir = FSDirectory.open(Paths.get("index"));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		Analyzer analyzer = new StandardAnalyzer();
 		IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-
-		/*if (create) {
-			// Create a new index in the directory, removing any
-			// previously indexed documents:
-			iwc.setOpenMode(OpenMode.CREATE);
-		} else {
-			// Add new documents to an existing index:
-			iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
-		}*/
 		
 		iwc.setOpenMode(OpenMode.CREATE);
 
@@ -85,8 +78,15 @@ public class IndexDocs {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		indexDocs(writer, docObjList);
+		
+		System.out.println("Starting to indexing documents...");
 
+		for(int i = 0; i < docObjList.size(); i++) {
+			indexDoc(writer, docObjList.get(i));
+		}
+		System.out.println("Finish indexing documents...");
+		
+		
 		try {
 			writer.close();
 		} catch (IOException e) {
@@ -96,19 +96,12 @@ public class IndexDocs {
 		
 	}
 	
-	static void indexDocs(final IndexWriter writer, List<CranfieldDoc> docObjList){
-	   
-		for(int i = 0; i < docObjList.size(); i++) {
-			indexDoc(writer, docObjList.get(i));
-		}
-	   
-	}
-	
-	/** Indexes a single document */
+	/** Indexes a single document **/
 	static void indexDoc(IndexWriter writer, CranfieldDoc docObj) {
 		//System.out.println("Indexing document: " + docObj.getId());
 		// make a new, empty document
-		Document doc = new Document();		
+		Document doc = new Document();	
+		String stemmedText = "";
 		
 		/*
 		 * Field.Store.YES vs Field.Store.NO:
@@ -118,29 +111,76 @@ public class IndexDocs {
 		
 		doc.add(new StringField("id", String.valueOf(docObj.getId()), Field.Store.YES));
 		
-		InputStream inputStream = new ByteArrayInputStream( docObj.getTitle().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new StringField("title", docObj.getTitle(), Field.Store.YES));
-		//doc.add(new TextField("title", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)), Field.Store.YES));
 		
-		inputStream = new ByteArrayInputStream( docObj.getAuthors().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("authors", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))));
+		/* Cranfield Doc Title*/
+		try {
+			stemmedText = stemWords("title", docObj.getTitle());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		doc.add(new TextField("title", stemmedText, Field.Store.YES));
+		System.out.println("ORIG TEXT: " + docObj.getTitle());
+		System.out.println("STEMMED TEXT: " + stemmedText);
 		
-		inputStream = new ByteArrayInputStream( docObj.getBibliography().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("bibliography", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))));
 		
-		inputStream = new ByteArrayInputStream( docObj.getWords().getBytes( StandardCharsets.UTF_8 ) );
-		doc.add(new TextField("words", new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))));
-
+		/* Cranfield Doc Bibliography*/
+		/*try {
+			stemmedText = stemWords("bibliography", docObj.getBibliography());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		doc.add(new TextField("bibliography", stemmedText, Field.Store.YES));
+		System.out.println("ORIG TEXT: " + docObj.getBibliography());
+		System.out.println("STEMMED TEXT: " + stemmedText);*/
+		
+		/* Cranfield Doc Text*/
+		try {
+			stemmedText = stemWords("title", docObj.getWords());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		doc.add(new TextField("words", stemmedText, Field.Store.YES));
+		//System.out.println("ORIG TEXT: " + docObj.getWords());
+		//System.out.println("STEMMED TEXT: " + stemmedText);
+		
+		
 		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
-			// New index, so we just add the document (no old document can be there):
-			//System.out.println("adding " + docObj.getTitle());
 			try {
 				writer.addDocument(doc);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	
+	private static String stemWords(String fieldName, String text) throws IOException{
+	    
+	    Analyzer analyzer = new StandardAnalyzer();
+	    TokenStream tokenizer = analyzer.tokenStream(fieldName, text);
+	 
+	    tokenizer = new LowerCaseFilter(tokenizer);
+	    tokenizer = new PorterStemFilter(tokenizer);
+
+	    CharTermAttribute token = tokenizer.getAttribute(CharTermAttribute.class);
+	    
+
+	    StringBuilder stringBuilder = new StringBuilder();
+	    tokenizer.reset();
+
+	    while(tokenizer.incrementToken()) {
+	        if(stringBuilder.length() > 0 ) {
+	            stringBuilder.append(" ");
+	        }
+
+	        stringBuilder.append(token.toString());
+	    }
+
+	    tokenizer.end();
+	    tokenizer.close();
+	    analyzer.close();
+
+	    return stringBuilder.toString();
 	}
 
 }

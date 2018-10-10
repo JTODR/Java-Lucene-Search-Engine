@@ -12,7 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -24,7 +28,6 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 
 import document.CranfieldQuery;
-import document.CranfieldQueryResult;
 
 public class QueryDocs {
 	public static void main(String[] args) throws Exception {
@@ -53,20 +56,24 @@ public class QueryDocs {
 		
 		List<String> outputData = new ArrayList<>();
 		
+		String line = "";
+		String stemmedLine = "";
+ 		
 		for(int i = 0; i < queries.size(); i++){
 
-			String line = queries.get(i).getText();
+			line = queries.get(i).getText().trim();
 			Integer queryId = queries.get(i).getId();
 
 			if (line == null || line.length() == -1) {
 				break;
 			}
+			
+			stemmedLine = stemWords("words", line);
 
-			line = line.trim();
-
-			Query query = parser.parse(line);
-			//System.out.println("\n\nOriginal query: ID: " + queries.get(i).getId() + ". Text: " + line);
-			//System.out.println("Parsed query: " + query.toString(field));
+			Query query = parser.parse(stemmedLine);
+			//System.out.println("\n\nOriginal query: ID: " + queries.get(i).getId() + ". \nText: " + line + ". \nStemmed Text: " + stemmedLine);
+			System.out.println("Parsed query: " + query.toString(field));
+			//System.out.println("QUERY: " + query);
 			
 			outputData.addAll(performQuerySearch(in, searcher, query, queryId));
 		}
@@ -74,7 +81,7 @@ public class QueryDocs {
 		for(int i = 0; i < outputData.size(); i++) {
 			System.out.println(outputData.get(i));
 		}
-		Path file = Paths.get("output/MyCranfieldResults.txt");
+		Path file = Paths.get("output/SearchEngineResults.txt");
 		Files.write(file, outputData, Charset.forName("UTF-8"));
 		
 		reader.close();
@@ -85,24 +92,44 @@ public class QueryDocs {
 	    TopDocs results = searcher.search(query, 30);
 	    ScoreDoc[] hits = results.scoreDocs;
 	    Document doc = null;
-	    float maxScore = 1;
-	    float simScore = 0;
 	    
 	    for(int i = 0; i < hits.length; i++) {
-	    	if(i == 0) {
-	    		maxScore = hits[i].score;
-	    	}
-	    	doc = searcher.doc(hits[i].doc);
-	    	/*simScore = (hits[i].score/maxScore)*5;
-	    	if(simScore > 2) {
-		        returnList.add(queryId + " Q0 " + Integer.valueOf(doc.get("id")) + " " +  (i + 1) + " "+ simScore + " STANDARD");
 
-	    	}*/
+	    	doc = searcher.doc(hits[i].doc);
+
 	        returnList.add(queryId + " Q0 " + Integer.valueOf(doc.get("id")) + " " +  (i + 1) + " "+ hits[i].score + " STANDARD");
 
-	       
 	        //System.out.println("FOUND [ID: " + docId + "] [SCORE: " + hits[i].score + "]");
 	    } 
 	    return returnList;
 	  }
+	
+	private static String stemWords(String fieldName, String text) throws IOException{
+	    
+	    Analyzer analyzer = new StandardAnalyzer();
+	    TokenStream tokenizer = analyzer.tokenStream(fieldName, text);
+	 
+	    tokenizer = new LowerCaseFilter(tokenizer);
+	    tokenizer = new PorterStemFilter(tokenizer);
+
+	    CharTermAttribute token = tokenizer.getAttribute(CharTermAttribute.class);
+	    
+
+	    StringBuilder stringBuilder = new StringBuilder();
+	    tokenizer.reset();
+
+	    while(tokenizer.incrementToken()) {
+	        if(stringBuilder.length() > 0 ) {
+	            stringBuilder.append(" ");
+	        }
+
+	        stringBuilder.append(token.toString());
+	    }
+
+	    tokenizer.end();
+	    tokenizer.close();
+	    analyzer.close();
+
+	    return stringBuilder.toString();
+	}
 }
