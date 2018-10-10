@@ -1,6 +1,7 @@
 package query;
 
 import parse.CranfieldQueryParser;
+import parse.Parser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,9 +44,9 @@ public class QueryDocs {
 	
 	private static String queryPath = "data/cran.qry";
 	private static String indexPath = "index";
+	private static Parser parser = new Parser();
 	
 	public static void main(String[] args) throws Exception {
-		
 
 
 		final Path queryDir = Paths.get(queryPath);
@@ -81,6 +82,7 @@ public class QueryDocs {
 				break;
 			}
 			
+			queryText = removeCommonWords(queryText);
 			Query query = parser.parse(queryText);
 			//System.out.println("\n\nOriginal query: ID: " + queries.get(i).getId() + ". \nText: " + line + ". \nStemmed Text: " + stemmedLine);
 			System.out.println("Parsed query: " + query.toString(field));
@@ -96,9 +98,28 @@ public class QueryDocs {
 		Files.write(file, outputData, Charset.forName("UTF-8"));
 		
 		reader.close();
+		
+		postingsDemo();
+	}
+	
+
+	private static String removeCommonWords(String query) {
+		List<String> commonWords = Parser.getCommonWordList();
+		for(String commonWord : commonWords) {
+			if(query.contains(commonWord))
+				query = query.replaceAll(getRegex(commonWord), "");		
+		}
+	
+		return query;
+	}
+	
+	private static String getRegex(String text) {
+		return "\\b" + text + "\\b";
 	}
 	
 	public static List<String> performQuerySearch(IndexSearcher searcher, Query query, int queryId) throws IOException {
+		
+
 		List<String> returnList = new ArrayList<>();  
 	    TopDocs results = searcher.search(query, 30);
 	    ScoreDoc[] hits = results.scoreDocs;
@@ -113,4 +134,65 @@ public class QueryDocs {
 	    } 
 	    return returnList;
 	  }	
+	
+	private static void postingsDemo() throws IOException {
+        DirectoryReader ireader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
+    
+        // Use IndexSearcher to retrieve some arbitrary document from the index        
+        IndexSearcher isearcher = new IndexSearcher(ireader);
+        Query queryTerm = new TermQuery(new Term("contents","accru"));
+        ScoreDoc[] hits = isearcher.search(queryTerm, 1).scoreDocs;
+        
+        // Make sure we actually found something
+        if (hits.length <= 0) {
+            System.out.println("Failed to retrieve a document");
+            return;
+        }
+
+        // get the document ID of the first search result
+        int docID = hits[0].doc;
+        System.out.println("DOC ID: " + docID);
+
+        // Get the fields associated with the document (filename and content)
+        Fields fields = ireader.getTermVectors(docID);
+
+        for (String field : fields) {
+            // For each field, get the terms it contains i.e. unique words
+            Terms terms = fields.terms(field);
+
+            // Iterate over each term in the field
+            BytesRef termByte = null;
+            TermsEnum termsEnum = terms.iterator();
+
+            while ((termByte = termsEnum.next()) != null) {                                
+                int id;
+
+                // for each term retrieve its postings list
+                PostingsEnum posting = null;
+                posting = termsEnum.postings(posting, PostingsEnum.FREQS);
+
+                // In spite of appearances, this only processes one document
+                // i.e the one we retrieved earlier
+                while ((id = posting.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+                    // convert the term from a byte array to a string
+                    String termString = termByte.utf8ToString();
+                    
+                    // extract some stats from the index
+                    Term term = new Term(field, termString);
+                    long freq = posting.freq();
+                    long docFreq = ireader.docFreq(term);
+                    long totFreq = ireader.totalTermFreq(term);
+
+                    // print the results
+                    System.out.printf(
+                        "%-16s : freq = %4d : totfreq = %4d : docfreq = %4d\n",
+                        termString, freq, totFreq, docFreq
+                    );
+                }
+            }
+        }
+
+        // close everything when we're done
+        ireader.close();
+    }
 }

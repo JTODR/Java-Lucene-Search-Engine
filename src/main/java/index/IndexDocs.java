@@ -66,12 +66,12 @@ public class IndexDocs {
 		}
 		Analyzer analyzer = new EnglishAnalyzer();
 		
-		/*FieldType ft = new FieldType(TextField.TYPE_STORED);
+		FieldType ft = new FieldType(TextField.TYPE_STORED);
         ft.setTokenized(true); //done as default
         ft.setStoreTermVectors(true);
         ft.setStoreTermVectorPositions(true);
         ft.setStoreTermVectorOffsets(true);
-        ft.setStoreTermVectorPayloads(true);*/
+        ft.setStoreTermVectorPayloads(true);
         
 		IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 		iwc.setOpenMode(OpenMode.CREATE);
@@ -80,7 +80,7 @@ public class IndexDocs {
 		System.out.println("Starting to indexing documents...");
 
 		for(int i = 0; i < documentList.size(); i++) {
-			indexDoc(writer, documentList.get(i));
+			indexDoc(writer, documentList.get(i), ft);
 		}
 		System.out.println("Finish indexing documents...");
 		
@@ -88,7 +88,7 @@ public class IndexDocs {
 	}
 	
 	/** Indexes a single document **/
-	static void indexDoc(IndexWriter writer, CranfieldDoc document) throws IOException {
+	static void indexDoc(IndexWriter writer, CranfieldDoc document, FieldType ft) throws IOException {
 
 		Document doc = new Document();	
 		
@@ -101,7 +101,7 @@ public class IndexDocs {
 		
 		/* Cranfield Doc Text*/
 		//System.out.println("contents: " + document.getWords());
-		doc.add(new TextField("contents", document.getWords(), Field.Store.YES));
+		doc.add(new Field("contents", document.getWords(), ft));
 		
 		
 		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {

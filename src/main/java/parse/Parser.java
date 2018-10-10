@@ -12,6 +12,54 @@ import java.util.List;
 
 public class Parser {
 	
+	private static List<String> commonWordList = new ArrayList<String>();
+	
+	public static List<String> getCommonWordList() {
+		commonWordList.add("must");
+		commonWordList.add("above");
+		commonWordList.add("what");
+		commonWordList.add("would");
+		commonWordList.add("should");
+		commonWordList.add("when");
+		commonWordList.add("if");
+		commonWordList.add("far");
+		commonWordList.add("above");
+		commonWordList.add("do");
+		commonWordList.add("we");
+		commonWordList.add("can");
+		commonWordList.add("does");
+		commonWordList.add("have");
+		commonWordList.add("over");
+		commonWordList.add("how");
+		commonWordList.add("can't");
+		commonWordList.add("like");
+		commonWordList.add("been");
+		commonWordList.add("did");
+		commonWordList.add("which");
+		commonWordList.add("why");
+		commonWordList.add("else");
+		commonWordList.add("find");
+		commonWordList.add("has");
+		commonWordList.add("any");
+		commonWordList.add("done");
+		commonWordList.add("best");
+		commonWordList.add("anyone");
+		commonWordList.add("on");
+		commonWordList.add("flow");
+		commonWordList.add("result");
+		commonWordList.add("number");
+		commonWordList.add("from");
+		commonWordList.add("pressure");
+
+
+
+
+
+
+		
+		return commonWordList;
+	}
+	
 	public String[] readFile(Path path) {		
 		
 		InputStream stream = null;
@@ -28,9 +76,7 @@ public class Parser {
 		// read in file
 		try {
 			while((line = in.readLine()) != null) {
-				System.out.println("LINE: " + line );
 				fileContent.append(line + " ");
-				//fileContent.append("\n");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -43,7 +89,7 @@ public class Parser {
 
 		String[] parts = fileContent.toString().split(".I");
 		String[] returnArray = Arrays.copyOfRange(parts, 1, parts.length);		// remove 1st item from array
-		
+
 		return returnArray;
 	}
 	
@@ -69,4 +115,6 @@ public class Parser {
 		
 		return resultList;
 	}
+
+
 }

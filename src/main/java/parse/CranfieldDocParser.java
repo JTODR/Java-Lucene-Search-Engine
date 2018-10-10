@@ -26,7 +26,7 @@ public class CranfieldDocParser extends Parser {
 		
 		System.out.println("Finished parsing each document...");
 		
-		return null;
+		return docList;
 	}
 
 	private static CranfieldDoc parseDoc(String currDoc) {
