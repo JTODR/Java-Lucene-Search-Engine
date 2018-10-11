@@ -96,8 +96,7 @@ public class IndexDocs {
 		doc.add(new StringField("id", String.valueOf(document.getId()), Field.Store.YES));
 		
 		/* Cranfield Doc Title*/
-		//doc.add(new TextField("title", stemmedText, Field.Store.YES));
-		
+		doc.add(new TextField("title", document.getTitle(), Field.Store.YES));
 		
 		/* Cranfield Doc Text*/
 		//System.out.println("contents: " + document.getWords());

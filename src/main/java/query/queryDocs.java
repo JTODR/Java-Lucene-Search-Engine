@@ -10,7 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
@@ -27,6 +31,8 @@ import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
@@ -66,9 +72,8 @@ public class QueryDocs {
 		IndexSearcher searcher = new IndexSearcher(reader);
 		searcher.setSimilarity(new BM25Similarity());
 		Analyzer analyzer = new EnglishAnalyzer();
-		QueryParser parser = new QueryParser(field, analyzer);
 		
-		List<String> outputData = new ArrayList<>();
+		List<String> outputData = new ArrayList<String>();
 		
 		String queryText = "";
 		int queryId = 0;
@@ -82,12 +87,21 @@ public class QueryDocs {
 				break;
 			}
 			
-			queryText = removeCommonWords(queryText);
-			Query query = parser.parse(queryText);
-			//System.out.println("\n\nOriginal query: ID: " + queries.get(i).getId() + ". \nText: " + line + ". \nStemmed Text: " + stemmedLine);
-			System.out.println("Parsed query: " + query.toString(field));
-			//System.out.println("QUERY: " + query);
+			queryText = removeCommonWords(queryText).trim().replaceAll("  ", " ");
+			System.out.println("QUERYTEXT: " + queryText);
 			
+			queryText = getTermIndexFreq(queryText, reader, analyzer);
+
+			// Creating a multi field query parser
+			HashMap<String,Float> boosts = new HashMap<String,Float>();
+			boosts.put("title", 2f);
+			boosts.put("contents", 10f);
+			MultiFieldQueryParser multiFieldQP = new MultiFieldQueryParser(new String[] {"title","contents"}, analyzer, boosts);
+			Query query = multiFieldQP.parse(queryText);
+			queryText = getTermIndexFreq(queryText, reader, analyzer);
+
+			System.out.println("Parsed query: " + query.toString());
+
 			outputData.addAll(performQuerySearch(searcher, query, queryId));
 		}
 		
@@ -98,8 +112,6 @@ public class QueryDocs {
 		Files.write(file, outputData, Charset.forName("UTF-8"));
 		
 		reader.close();
-		
-		postingsDemo();
 	}
 	
 
@@ -107,20 +119,14 @@ public class QueryDocs {
 		List<String> commonWords = Parser.getCommonWordList();
 		for(String commonWord : commonWords) {
 			if(query.contains(commonWord))
-				query = query.replaceAll(getRegex(commonWord), "");		
+				query = query.replaceAll("\\b" + commonWord + "\\b", "");		
 		}
-	
 		return query;
 	}
 	
-	private static String getRegex(String text) {
-		return "\\b" + text + "\\b";
-	}
-	
 	public static List<String> performQuerySearch(IndexSearcher searcher, Query query, int queryId) throws IOException {
+		List<String> returnList = new ArrayList<String>();
 		
-
-		List<String> returnList = new ArrayList<>();  
 	    TopDocs results = searcher.search(query, 30);
 	    ScoreDoc[] hits = results.scoreDocs;
 	    Document doc = null;
@@ -135,64 +141,43 @@ public class QueryDocs {
 	    return returnList;
 	  }	
 	
-	private static void postingsDemo() throws IOException {
-        DirectoryReader ireader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
-    
-        // Use IndexSearcher to retrieve some arbitrary document from the index        
-        IndexSearcher isearcher = new IndexSearcher(ireader);
-        Query queryTerm = new TermQuery(new Term("contents","accru"));
-        ScoreDoc[] hits = isearcher.search(queryTerm, 1).scoreDocs;
-        
-        // Make sure we actually found something
-        if (hits.length <= 0) {
-            System.out.println("Failed to retrieve a document");
-            return;
-        }
+	private static String getTermIndexFreq(String queryText, IndexReader reader, Analyzer analyzer) throws Exception {
+		QueryParser parser = new QueryParser("contents", analyzer);
+		Query query = parser.parse(queryText.replaceAll("\\)", "").replaceAll("\\(", ""));
+		String[] queryTextWords = query.toString("contents").split(" ");
+		System.out.println("Query String: " + query.toString("contents"));
 
-        // get the document ID of the first search result
-        int docID = hits[0].doc;
-        System.out.println("DOC ID: " + docID);
-
-        // Get the fields associated with the document (filename and content)
-        Fields fields = ireader.getTermVectors(docID);
-
-        for (String field : fields) {
-            // For each field, get the terms it contains i.e. unique words
-            Terms terms = fields.terms(field);
-
-            // Iterate over each term in the field
-            BytesRef termByte = null;
-            TermsEnum termsEnum = terms.iterator();
-
-            while ((termByte = termsEnum.next()) != null) {                                
-                int id;
-
-                // for each term retrieve its postings list
-                PostingsEnum posting = null;
-                posting = termsEnum.postings(posting, PostingsEnum.FREQS);
-
-                // In spite of appearances, this only processes one document
-                // i.e the one we retrieved earlier
-                while ((id = posting.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
-                    // convert the term from a byte array to a string
-                    String termString = termByte.utf8ToString();
-                    
-                    // extract some stats from the index
-                    Term term = new Term(field, termString);
-                    long freq = posting.freq();
-                    long docFreq = ireader.docFreq(term);
-                    long totFreq = ireader.totalTermFreq(term);
-
-                    // print the results
-                    System.out.printf(
-                        "%-16s : freq = %4d : totfreq = %4d : docfreq = %4d\n",
-                        termString, freq, totFreq, docFreq
-                    );
-                }
-            }
-        }
-
-        // close everything when we're done
-        ireader.close();
-    }
+		long wordFreq = 0;
+		int maxWordFreq = 0;
+		String newQueryStr = "";
+		HashMap<String, Integer> wordFreqMap = new HashMap<String, Integer>();
+		
+		for(String word : queryTextWords) {
+			Term term = new Term("contents", word);
+			wordFreq = reader.docFreq(term);
+			System.out.println(word + " freq = " + reader.docFreq(term));
+			wordFreqMap.put(word, (int)wordFreq);
+			
+			if(wordFreq > maxWordFreq)
+				maxWordFreq = (int)wordFreq;
+		}
+		
+		int limit = maxWordFreq/2;
+		boolean addedToNewString = false;
+		for (Entry<String, Integer> entry : wordFreqMap.entrySet()){
+			if(entry.getValue() < limit) {
+				newQueryStr = newQueryStr + entry.getKey() + " ";
+				addedToNewString = true;
+			}
+		}
+		
+		if(!addedToNewString) {
+			return query.toString("contents");
+		}
+		
+		System.out.println("NEW QUERY: " + newQueryStr + "\n");
+		
+		return newQueryStr;
+	}
+	
 }

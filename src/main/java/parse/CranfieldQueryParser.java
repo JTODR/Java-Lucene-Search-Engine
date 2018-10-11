@@ -34,7 +34,7 @@ public class CranfieldQueryParser extends Parser {
 		String text;
 		
 		String[] delimiters = {".W"};
-		List<String> queryContents = new ArrayList<>();
+		List<String> queryContents = new ArrayList<String>();
 		
 		queryContents = parse(query, delimiters);
 		

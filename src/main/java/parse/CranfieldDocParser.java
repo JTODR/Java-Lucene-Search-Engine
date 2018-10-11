@@ -35,7 +35,7 @@ public class CranfieldDocParser extends Parser {
 		String title, authors, bibliography, words;
 		
 		String[] delimiters = {".T", ".A", ".B", ".W"};
-		List<String> docContents = new ArrayList<>();
+		List<String> docContents = new ArrayList<String>();
 		
 		docContents = parse(currDoc, delimiters);
 		

@@ -50,13 +50,11 @@ public class Parser {
 		commonWordList.add("number");
 		commonWordList.add("from");
 		commonWordList.add("pressure");
+		commonWordList.add("be");
+		commonWordList.add("of");
 
 
 
-
-
-
-		
 		return commonWordList;
 	}
 	
@@ -94,7 +92,7 @@ public class Parser {
 	}
 	
 	public static List<String> parse(String text, String[] delimiters){
-		List<String> resultList = new ArrayList<>();
+		List<String> resultList = new ArrayList<String>();
 	
 		for(int i = 0; i < delimiters.length; i++) {
 			
