@@ -21,7 +21,7 @@ public class CranfieldQueryParser extends Parser {
 		System.out.println("Starting to parse each individual query...");
 		// parse each doc and return the object for each doc
 		for (int i = 0; i < fileParts.length; i++) { 
-			queryList.add(parseQuery(fileParts[i]));
+			queryList.add(parseQuery(fileParts[i], i+1));
 		}
 		
 		System.out.println("Finished parsing each query...");
@@ -29,8 +29,7 @@ public class CranfieldQueryParser extends Parser {
 		return queryList;
 	}
 	
-	private CranfieldQuery parseQuery(String query) {
-		int id;
+	private CranfieldQuery parseQuery(String query, int id) {
 		String text;
 		
 		String[] delimiters = {".W"};
@@ -38,11 +37,10 @@ public class CranfieldQueryParser extends Parser {
 		
 		queryContents = parse(query, delimiters);
 		
-		id = Integer.parseInt(queryContents.get(0).trim().replaceAll(" +", " "));
 		text = queryContents.get(1).trim().replaceAll(" +", " ").replaceAll("\\?", "");
 		
-		//System.out.println("ID: " + id);
-		//System.out.println("TEXT: " + text + "\n\n");
+		System.out.println("ID: " + id);
+		System.out.println("TEXT: " + text + "\n\n");
 		
 		return createQueryObj(id, text);
 	}

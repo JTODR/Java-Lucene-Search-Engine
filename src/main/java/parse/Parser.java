@@ -45,13 +45,29 @@ public class Parser {
 		commonWordList.add("best");
 		commonWordList.add("anyone");
 		commonWordList.add("on");
-		commonWordList.add("flow");
+		//commonWordList.add("flow");
 		commonWordList.add("result");
 		commonWordList.add("number");
 		commonWordList.add("from");
-		commonWordList.add("pressure");
+		//commonWordList.add("pressure");
 		commonWordList.add("be");
 		commonWordList.add("of");
+		commonWordList.add("about");
+		commonWordList.add("along");
+		commonWordList.add("being");
+		commonWordList.add("simple");
+		commonWordList.add("practical");
+		//commonWordList.add("method");
+		commonWordList.add("possible");
+		commonWordList.add("information");
+		commonWordList.add("pertaining");
+		commonWordList.add("very");
+		commonWordList.add("available");
+		//commonWordList.add("existing");
+		//commonWordList.add("solution");
+		commonWordList.add("details");
+
+		
 
 
 
