@@ -1,10 +1,10 @@
-package reader;
+package com.informationretrieval.reader;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import document.CranfieldQuery;
+import com.informationretrieval.document.CranfieldQuery;
 
 public class CranfieldQueryReader extends FileReader {
 	

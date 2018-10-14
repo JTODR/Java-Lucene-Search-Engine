@@ -1,4 +1,4 @@
-package document;
+package com.informationretrieval.document;
 
 public class CranfieldQuery {
 	private int id;

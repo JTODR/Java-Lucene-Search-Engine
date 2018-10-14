@@ -1,10 +1,10 @@
-package reader;
+package com.informationretrieval.reader;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import document.CranfieldDoc;
+import com.informationretrieval.document.CranfieldDoc;
 
 public class CranfieldDocumentReader extends FileReader {
 	
@@ -45,11 +45,11 @@ public class CranfieldDocumentReader extends FileReader {
 		bibliography = docContents.get(3).trim().replaceAll(" +", " ");
 		words = docContents.get(4).trim().replaceAll(" +", " ");
 		
-		System.out.println("ID: " + docId);
-		System.out.println("TITLE: " + title);
-		System.out.println("AUTHORS: " + authors);
-		System.out.println("BIBLIOGRAPHY: " + bibliography);
-		System.out.println("WORDS: " + words + "\n\n");
+		//System.out.println("ID: " + docId);
+		//System.out.println("TITLE: " + title);
+		//System.out.println("AUTHORS: " + authors);
+		//System.out.println("BIBLIOGRAPHY: " + bibliography);
+		//System.out.println("WORDS: " + words + "\n\n");
 		
 		return createDocObj(docId, title, authors, bibliography, words);
 	}

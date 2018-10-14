@@ -1,4 +1,4 @@
-package query;
+package com.informationretrieval.query;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -35,9 +35,9 @@ import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
-import document.CranfieldQuery;
-import reader.CranfieldQueryReader;
-import reader.FileReader;
+import com.informationretrieval.document.CranfieldQuery;
+import com.informationretrieval.reader.CranfieldQueryReader;
+import com.informationretrieval.reader.FileReader;
 
 public class QueryDocs {
 
