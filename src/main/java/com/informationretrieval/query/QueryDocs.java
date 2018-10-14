@@ -32,6 +32,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
@@ -44,30 +45,53 @@ public class QueryDocs {
 	private static String queryPath = "data/cran.qry";
 	private static String indexPath = "index";
 	private static String outputResultsPath = "output/SearchEngineResults.txt";
+	private static Similarity similarity;
+	private static Analyzer analyzer;
 
 	public static void main(String[] args) throws Exception {
 
+		String usage = "java index.QueryDocs -analyzer ANALYZER -similarity SIMILARITY\n"
+				+ "Please specify an analyzer and similarity when running this program\n"
+				+ "ANALYZER is either [Standard] or [English]\n"
+				+ "SIMILARITY is either [BM25] or [VSM]";
+
+		// Must specify an analyzer when running this program
+		if (args.length < 4) {
+			System.err.println("Usage: " + usage + "\nExiting...");
+			System.exit(-1);
+		}
+			
 		final Path queryDir = Paths.get(queryPath);
 		if (!Files.isReadable(queryDir)) {
-			System.out.println("Query directory '" + queryDir.toAbsolutePath()
+			System.err.println("Query directory '" + queryDir.toAbsolutePath()
 					+ "' does not exist or is not readable, please check the path");
 			System.exit(2);
 		}
 
+		// Read in the Cranfield queries as a list of CranfieldQuery objects
 		CranfieldQueryReader queryReader = new CranfieldQueryReader();
-
 		List<CranfieldQuery> queries = queryReader.getQueries(queryDir);
-
+		
+		analyzer = getAnalyzer(args);
+		if (analyzer == null) {
+			System.err.println("Issue with the given analyzer arguments: " + args[0] + " " + args[1] + "\nUsage: " + usage + "\nExiting...");
+			System.exit(-1);
+		}
+		
 		IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
 		IndexSearcher searcher = new IndexSearcher(reader);
-		//searcher.setSimilarity(new ClassicSimilarity());
-		searcher.setSimilarity(new BM25Similarity());
-		//Analyzer analyzer = new EnglishAnalyzer();
-		Analyzer analyzer = new StandardAnalyzer();
+		
+		similarity = getSimilarity(args);
+		if (similarity == null) {
+			System.err.println("Issue with the given similarity arguments: " + args[2] + " " + args[3] + "\nUsage: " + usage + "\nExiting...");
+			System.exit(-1);
+		}
+		else {
+			searcher.setSimilarity(similarity);
+		}
 
 		List<String> outputData = new ArrayList<String>();
-		List<String> resultList = new ArrayList<String>();
-
+		//List<String> resultList = new ArrayList<String>();
 		String queryText = "";
 		int queryId = 0;
 
@@ -97,11 +121,10 @@ public class QueryDocs {
 			Query query = multiFieldQP.parse(queryText);
 
 			outputData.addAll(performQuerySearch(searcher, query, queryId));
-
 		}
 
 		// for(int i = 0; i < outputData.size(); i++) {
-		// System.out.println(outputData.get(i));
+		// 	System.out.println(outputData.get(i));
 		// }
 		Path file = Paths.get(outputResultsPath);
 		Files.write(file, outputData, Charset.forName("UTF-8"));
@@ -120,7 +143,6 @@ public class QueryDocs {
 
 	public static List<String> performQuerySearch(IndexSearcher searcher, Query query, int queryId) throws IOException {
 		List<String> returnList = new ArrayList<String>();
-
 		TopDocs results = searcher.search(query, 1000);
 		ScoreDoc[] hits = results.scoreDocs;
 		Document doc = null;
@@ -130,6 +152,37 @@ public class QueryDocs {
 			returnList.add(queryId + " Q0 " + doc.get("id") + " " + (i + 1) + " " + hits[i].score + " STANDARD");
 		}
 		return returnList;
+	}
+	
+	private static Analyzer getAnalyzer(String[] args) {
+
+		if (!args[0].equals("-analyzer")) {
+			return null;
+		} else {
+			if (args[1].toLowerCase().equals("standard")) {
+				System.out.println("Standard analyzer chosen to query the index...");
+				return new StandardAnalyzer();
+			} else if (args[1].toLowerCase().equals("english")) {
+				System.out.println("English analyzer chosen to query the index...");
+				return new EnglishAnalyzer();
+			} else
+				return null;
+		}
+	}
+	
+	private static Similarity getSimilarity(String[] args) {
+		if (!args[2].equals("-similarity")) {
+			return null;
+		} else {
+			if (args[3].equals("BM25")) {
+				System.out.println("BM25 similarity chosen to score the query results...");
+				return new BM25Similarity();
+			} else if (args[3].toLowerCase().equals("vsm")) {
+				System.out.println("VSM similarity chosen to score the query results...");
+				return new ClassicSimilarity();
+			} else
+				return null;
+		}
 	}
 
 	private static List<String> getQueryTermFrequency(Query query, int queryId) throws IOException {
