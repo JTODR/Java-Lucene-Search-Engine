@@ -1,30 +1,19 @@
 package query;
 
-import parse.CranfieldQueryParser;
-import parse.Parser;
-
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Fields;
@@ -34,7 +23,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
-import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
@@ -43,16 +31,19 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
 import document.CranfieldQuery;
+import reader.CranfieldQueryReader;
+import reader.FileReader;
 
 public class QueryDocs {
 
 	private static String queryPath = "data/cran.qry";
 	private static String indexPath = "index";
-	private static Parser parser = new Parser();
+	private static String outputResultsPath = "output/SearchEngineResults.txt";
 
 	public static void main(String[] args) throws Exception {
 
@@ -63,16 +54,16 @@ public class QueryDocs {
 			System.exit(2);
 		}
 
-		CranfieldQueryParser cranfieldParser = new CranfieldQueryParser();
+		CranfieldQueryReader queryReader = new CranfieldQueryReader();
 
-		List<CranfieldQuery> queries = cranfieldParser.getQueries(queryDir);
-
-		String field = "contents";
+		List<CranfieldQuery> queries = queryReader.getQueries(queryDir);
 
 		IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
 		IndexSearcher searcher = new IndexSearcher(reader);
+		//searcher.setSimilarity(new ClassicSimilarity());
 		searcher.setSimilarity(new BM25Similarity());
-		Analyzer analyzer = new EnglishAnalyzer();
+		//Analyzer analyzer = new EnglishAnalyzer();
+		Analyzer analyzer = new StandardAnalyzer();
 
 		List<String> outputData = new ArrayList<String>();
 		List<String> resultList = new ArrayList<String>();
@@ -80,6 +71,7 @@ public class QueryDocs {
 		String queryText = "";
 		int queryId = 0;
 
+		System.out.println("Starting to query the index...");
 		for (int i = 0; i < queries.size(); i++) {
 
 			queryText = queries.get(i).getText().trim();
@@ -90,45 +82,35 @@ public class QueryDocs {
 			}
 
 			queryText = removeCommonWords(queryText).trim().replaceAll("  ", " ");
-			System.out.println("QUERYTEXT: " + queryText);
+			//System.out.println("QUERYTEXT: " + queryText);
 
-			QueryParser tempParser = new QueryParser("contents", analyzer);
-			Query tempQuery = tempParser.parse(queryText);
-			outputData.addAll(performQuerySearch(searcher, tempQuery, queryId));
-
-			// resultList = getQueryTermFrequency(tempQuery, queryId);
-			// if(resultList != null)
-			// outputData.addAll(resultList);
-
-			// queryText = getTermIndexFreq(queryText, reader, analyzer);
+			// Creating a single field query parser
+			//QueryParser tempParser = new QueryParser("contents", analyzer);
+			//Query tempQuery = tempParser.parse(queryText);
+			//outputData.addAll(performQuerySearch(searcher, tempQuery, queryId));
 
 			// Creating a multi field query parser
-			/*
-			 * HashMap<String,Float> boosts = new HashMap<String,Float>();
-			 * boosts.put("title", 1.3f); boosts.put("contents", 0.8f);
-			 * MultiFieldQueryParser multiFieldQP = new MultiFieldQueryParser(new String[]
-			 * {"title","contents"}, analyzer, boosts); //queryText =
-			 * getTermIndexFreq(queryText, reader, analyzer); Query query =
-			 * multiFieldQP.parse(queryText);
-			 * 
-			 * 
-			 * //System.out.println("Parsed query: " + query.toString() + "\n\n");
-			 * 
-			 * outputData.addAll(performQuerySearch(searcher, query, queryId));
-			 */
+			HashMap<String, Float> boosts = new HashMap<String, Float>();
+			boosts.put("title", 0.8f);
+			boosts.put("contents", 1.3f);
+			MultiFieldQueryParser multiFieldQP = new MultiFieldQueryParser(new String[] { "title", "contents" }, analyzer, boosts);
+			Query query = multiFieldQP.parse(queryText);
+
+			outputData.addAll(performQuerySearch(searcher, query, queryId));
+
 		}
 
 		// for(int i = 0; i < outputData.size(); i++) {
 		// System.out.println(outputData.get(i));
 		// }
-		Path file = Paths.get("output/SearchEngineResults.txt");
+		Path file = Paths.get(outputResultsPath);
 		Files.write(file, outputData, Charset.forName("UTF-8"));
-		System.out.println("Done");
+		System.out.println("Query results are written to " + outputResultsPath + "...\nFinished...");
 		reader.close();
 	}
 
 	private static String removeCommonWords(String query) {
-		List<String> commonWords = Parser.getCommonWordList();
+		List<String> commonWords = FileReader.getCommonWordList();
 		for (String commonWord : commonWords) {
 			if (query.contains(commonWord))
 				query = query.replaceAll("\\b" + commonWord + "\\b", "");
@@ -139,20 +121,13 @@ public class QueryDocs {
 	public static List<String> performQuerySearch(IndexSearcher searcher, Query query, int queryId) throws IOException {
 		List<String> returnList = new ArrayList<String>();
 
-		TopDocs results = searcher.search(query, 30);
+		TopDocs results = searcher.search(query, 1000);
 		ScoreDoc[] hits = results.scoreDocs;
 		Document doc = null;
-		double scoreLimit = hits[0].score * 0.1;
 
 		for (int i = 0; i < hits.length; i++) {
-
 			doc = searcher.doc(hits[i].doc);
-			if (hits[i].score > scoreLimit) {
-				returnList.add(queryId + " Q0 " + doc.get("id") + " " + (i + 1) + " " + hits[i].score + " STANDARD");
-			}
-
-			// System.out.println("FOUND [ID: " + Integer.valueOf(doc.get("id"))+ "] [SCORE:
-			// " + hits[i].score + "]");
+			returnList.add(queryId + " Q0 " + doc.get("id") + " " + (i + 1) + " " + hits[i].score + " STANDARD");
 		}
 		return returnList;
 	}
