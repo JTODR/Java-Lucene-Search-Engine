@@ -6,66 +6,30 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class FileReader {
 	
-	private static List<String> commonWordList = new ArrayList<String>();
+	private static String commonWordsFile = "data/CommonWordsList.txt";
 	
 	public static List<String> getCommonWordList() {
-		commonWordList.add("must");
-		commonWordList.add("above");
-		commonWordList.add("what");
-		commonWordList.add("would");
-		commonWordList.add("should");
-		commonWordList.add("when");
-		commonWordList.add("if");
-		commonWordList.add("far");
-		commonWordList.add("above");
-		commonWordList.add("do");
-		commonWordList.add("we");
-		commonWordList.add("can");
-		commonWordList.add("does");
-		commonWordList.add("have");
-		commonWordList.add("over");
-		commonWordList.add("how");
-		commonWordList.add("can't");
-		commonWordList.add("like");
-		commonWordList.add("been");
-		commonWordList.add("did");
-		commonWordList.add("which");
-		commonWordList.add("why");
-		commonWordList.add("else");
-		commonWordList.add("find");
-		commonWordList.add("has");
-		commonWordList.add("any");
-		commonWordList.add("done");
-		commonWordList.add("best");
-		commonWordList.add("anyone");
-		commonWordList.add("on");
-		commonWordList.add("result");
-		commonWordList.add("number");
-		commonWordList.add("from");
-		commonWordList.add("be");
-		commonWordList.add("of");
-		commonWordList.add("about");
-		commonWordList.add("along");
-		commonWordList.add("being");
-		commonWordList.add("simple");
-		commonWordList.add("practical");
-		commonWordList.add("possible");
-		commonWordList.add("information");
-		commonWordList.add("pertaining");
-		commonWordList.add("very");
-		commonWordList.add("available");
-		commonWordList.add("details");
-
-		return commonWordList;
+		String commonWords = "";
+		Path commonWordsPath = Paths.get(commonWordsFile);
+		
+		if (!Files.isReadable(commonWordsPath)) {
+			System.err.println("Common words file '" + commonWordsPath.toAbsolutePath() + "' does not exist or is not readable, please check the path");
+			System.exit(1);
+		}
+		else {
+			commonWords = readFile(commonWordsPath);
+		}
+		return new ArrayList<String>(Arrays.asList(commonWords.split(" ")));
 	}
 	
-	public String[] readFile(Path path) {		
+	public static String readFile(Path path) {		
 		
 		InputStream stream = null;
 		try {
@@ -89,13 +53,7 @@ public class FileReader {
 		
 		//System.out.println(fileContent.toString().substring(0,5000));
 		System.out.println("Document read successfully...");
-		
-		// split the file using UniqueID as the delimiter
-
-		String[] parts = fileContent.toString().split(".I");
-		String[] returnArray = Arrays.copyOfRange(parts, 1, parts.length);		// remove 1st item from array
-
-		return returnArray;
+		return fileContent.toString();
 	}
 	
 	public static List<String> splitFileOnDelimiters(String text, String[] delimiters){

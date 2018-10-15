@@ -2,6 +2,7 @@ package com.informationretrieval.reader;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.informationretrieval.document.CranfieldDoc;
@@ -14,14 +15,18 @@ public class CranfieldDocumentReader extends FileReader {
 	
 	public List<CranfieldDoc> getDocuments(Path docDir) {
 		
-		String[] fileParts = readFile(docDir);
+		String fileContent = readFile(docDir);
+		
+		// split the file using UniqueID as the delimiter
+		String[] parts = fileContent.split(".I");
+		parts = Arrays.copyOfRange(parts, 1, parts.length);		// remove 1st item from array
 
 		List<CranfieldDoc> docList = new ArrayList<CranfieldDoc>();
 
 		System.out.println("Starting to read in each individual document...");
 		// read in each doc and return the object for each doc
-		for (int i = 0; i < fileParts.length; i++) { 
-			docList.add(getSingleDoc(fileParts[i]));
+		for (int i = 0; i < parts.length; i++) { 
+			docList.add(getSingleDoc(parts[i]));
 		}
 		
 		System.out.println("Reading in of Cranfield documents complete...");

@@ -72,6 +72,10 @@ public class QueryDocs {
 		CranfieldQueryReader queryReader = new CranfieldQueryReader();
 		List<CranfieldQuery> queries = queryReader.getQueries(queryDir);
 		
+		// Get the list of common words that will be used to remove common words from each query
+		List<String> commonWords = FileReader.getCommonWordList();
+		
+		// Get the analyzer that will be used by the query parser
 		analyzer = getAnalyzer(args);
 		if (analyzer == null) {
 			System.err.println("Issue with the given analyzer arguments: " + args[0] + " " + args[1] + "\nUsage: " + usage + "\nExiting...");
@@ -81,20 +85,19 @@ public class QueryDocs {
 		IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
 		IndexSearcher searcher = new IndexSearcher(reader);
 		
-		similarity = getSimilarity(args);
-		if (similarity == null) {
+		// Get the similarity method that will be used by the index searcher to score the query results
+		if (getSimilarity(args) == null) {
 			System.err.println("Issue with the given similarity arguments: " + args[2] + " " + args[3] + "\nUsage: " + usage + "\nExiting...");
 			System.exit(-1);
 		}
 		else {
-			searcher.setSimilarity(similarity);
+			searcher.setSimilarity(getSimilarity(args));
 		}
 
 		List<String> outputData = new ArrayList<String>();
-		//List<String> resultList = new ArrayList<String>();
 		String queryText = "";
 		int queryId = 0;
-
+		
 		System.out.println("Starting to query the index...");
 		for (int i = 0; i < queries.size(); i++) {
 
@@ -105,7 +108,8 @@ public class QueryDocs {
 				break;
 			}
 
-			queryText = removeCommonWords(queryText).trim().replaceAll("  ", " ");
+			// Remove common words from the query, this helps increase the precision of the query
+			queryText = removeCommonWords(queryText, commonWords).trim().replaceAll("  ", " ");
 			//System.out.println("QUERYTEXT: " + queryText);
 
 			// Creating a single field query parser
@@ -113,13 +117,14 @@ public class QueryDocs {
 			//Query tempQuery = tempParser.parse(queryText);
 			//outputData.addAll(performQuerySearch(searcher, tempQuery, queryId));
 
-			// Creating a multi field query parser
+			// Creating a multi field query parser, boosting the index contents over the index title
 			HashMap<String, Float> boosts = new HashMap<String, Float>();
 			boosts.put("title", 0.8f);
 			boosts.put("contents", 1.3f);
 			MultiFieldQueryParser multiFieldQP = new MultiFieldQueryParser(new String[] { "title", "contents" }, analyzer, boosts);
 			Query query = multiFieldQP.parse(queryText);
 
+			// Perform a query search on the indexed documents
 			outputData.addAll(performQuerySearch(searcher, query, queryId));
 		}
 
@@ -132,26 +137,25 @@ public class QueryDocs {
 		reader.close();
 	}
 
-	private static String removeCommonWords(String query) {
-		List<String> commonWords = FileReader.getCommonWordList();
+	private static String removeCommonWords(String query, List<String> commonWords) {
 		for (String commonWord : commonWords) {
 			if (query.contains(commonWord))
-				query = query.replaceAll("\\b" + commonWord + "\\b", "");
+				query = query.replaceAll("\\b" + commonWord + "\\b", "");	// Replace any common words with an empty string
 		}
 		return query;
 	}
 
 	public static List<String> performQuerySearch(IndexSearcher searcher, Query query, int queryId) throws IOException {
-		List<String> returnList = new ArrayList<String>();
+		List<String> queryResults = new ArrayList<String>();
 		TopDocs results = searcher.search(query, 1000);
 		ScoreDoc[] hits = results.scoreDocs;
 		Document doc = null;
 
 		for (int i = 0; i < hits.length; i++) {
 			doc = searcher.doc(hits[i].doc);
-			returnList.add(queryId + " Q0 " + doc.get("id") + " " + (i + 1) + " " + hits[i].score + " STANDARD");
+			queryResults.add(queryId + " Q0 " + doc.get("id") + " " + (i + 1) + " " + hits[i].score + " STANDARD");
 		}
-		return returnList;
+		return queryResults;
 	}
 	
 	private static Analyzer getAnalyzer(String[] args) {
@@ -171,6 +175,7 @@ public class QueryDocs {
 	}
 	
 	private static Similarity getSimilarity(String[] args) {
+		
 		if (!args[2].equals("-similarity")) {
 			return null;
 		} else {
