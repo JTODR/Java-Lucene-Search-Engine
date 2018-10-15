@@ -67,13 +67,6 @@ public class QueryDocs {
 					+ "' does not exist or is not readable, please check the path");
 			System.exit(2);
 		}
-
-		// Read in the Cranfield queries as a list of CranfieldQuery objects
-		CranfieldQueryReader queryReader = new CranfieldQueryReader();
-		List<CranfieldQuery> queries = queryReader.getQueries(queryDir);
-		
-		// Get the list of common words that will be used to remove common words from each query
-		List<String> commonWords = FileReader.getCommonWordList();
 		
 		// Get the analyzer that will be used by the query parser
 		analyzer = getAnalyzer(args);
@@ -86,14 +79,22 @@ public class QueryDocs {
 		IndexSearcher searcher = new IndexSearcher(reader);
 		
 		// Get the similarity method that will be used by the index searcher to score the query results
-		if (getSimilarity(args) == null) {
+		similarity = getSimilarity(args);
+		if (similarity == null) {
 			System.err.println("Issue with the given similarity arguments: " + args[2] + " " + args[3] + "\nUsage: " + usage + "\nExiting...");
 			System.exit(-1);
 		}
 		else {
-			searcher.setSimilarity(getSimilarity(args));
+			searcher.setSimilarity(similarity);
 		}
 
+		// Read in the Cranfield queries as a list of CranfieldQuery objects
+		CranfieldQueryReader queryReader = new CranfieldQueryReader();
+		List<CranfieldQuery> queries = queryReader.getQueries(queryDir);
+		
+		// Get the list of common words that will be used to remove common words from each query
+		List<String> commonWords = FileReader.getCommonWordList();
+		
 		List<String> outputData = new ArrayList<String>();
 		String queryText = "";
 		int queryId = 0;
