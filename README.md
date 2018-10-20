@@ -5,25 +5,33 @@ The **Apache Lucene** framework is used to create the index and query the indexe
 
 ----
 
+## Building the Search Engine
+
+To build the project:
+
+    mvn clean compile package
+
+----
+
 ## Running the Search Engine
 
 The IndexDocs.java file indexes the Cranfield Collection documents. The QueryDocs.java file queries the indexed documents. The IndexDocs.java file must be run before running the QueryDocs.java file as the index must be created before it can be queried. 
 
-### Running IndexDocs.java
+### Running the Index Engine
 
 An analyzer must be specified as a command line argument when running the IndexDocs.java file. The chosen analyzer can be a Standard Analyzer or an English Analyzer. 
 
 To run IndexDocs.java: 
 
-    java IndexDocs.java -analyzer [Standard | English]
+    mvn exec:java -Dexec.mainClass="com.informationretrieval.index.IndexDocs" -Dexec.args="-analyzer [English | Standard]"
 
-### Running QueryDocs.java
+### Running the Query Engine
 
 An analyzer and a similarity scoring method must be specified as command line arguments when running the QueryDocs.java file. The chosen analyzer can be a Standard Analyzer or an English Analyzer. The chosen similarity score can be BM25 or VSM.
 
 To run QueryDocs.java: 
 
-    java QueryDocs.java -analyzer [Standard | English] -similarity [BM25 | VSM]
+    mvn exec:java -Dexec.mainClass="com.informationretrieval.query.QueryDocs" -Dexec.args="-analyzer [English | Standard] -similarity [BM25 | VSM]"
 
 ----
 
