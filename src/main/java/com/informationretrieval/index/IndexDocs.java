@@ -70,14 +70,6 @@ public class IndexDocs {
 			e.printStackTrace();
 		}
 
-		// The following is used buy QueryDocs.java to get most frequent document terms
-		FieldType ft = new FieldType(TextField.TYPE_STORED);
-		ft.setTokenized(true);
-		ft.setStoreTermVectors(true);
-		ft.setStoreTermVectorPositions(true);
-		ft.setStoreTermVectorOffsets(true);
-		ft.setStoreTermVectorPayloads(true);
-
 		// Indexer uses analyzer specified by the input args
 		IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 		iwc.setOpenMode(OpenMode.CREATE);
@@ -85,14 +77,14 @@ public class IndexDocs {
 
 		System.out.println("Starting to index documents...");
 		for (int i = 0; i < documentList.size(); i++) {
-			indexDoc(writer, documentList.get(i), ft);
+			indexDoc(writer, documentList.get(i));
 		}
 		System.out.println("Finish indexing documents...");
 
 		writer.close();
 	}
 
-	private static void indexDoc(IndexWriter writer, CranfieldDoc document, FieldType ft) throws IOException {
+	private static void indexDoc(IndexWriter writer, CranfieldDoc document) throws IOException {
 
 		Document doc = new Document();
 
@@ -103,7 +95,7 @@ public class IndexDocs {
 		doc.add(new TextField("title", document.getTitle(), Field.Store.YES));
 
 		/* Cranfield Doc Text */
-		doc.add(new Field("contents", document.getWords(), ft));
+		doc.add(new TextField("contents", document.getWords(), Field.Store.YES));
 
 		if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
 			writer.addDocument(doc);
